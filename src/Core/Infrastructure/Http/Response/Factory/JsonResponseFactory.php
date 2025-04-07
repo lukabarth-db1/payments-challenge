@@ -15,4 +15,12 @@ class JsonResponseFactory
             body: ['error' => 'Internal Server Error']
         );
     }
+
+    public static function badRequestError(string $message): JsonResponse
+    {
+        return new JsonResponse(
+            status: 400,
+            body: ['error' => $message]
+        );
+    }
 }

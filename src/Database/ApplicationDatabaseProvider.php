@@ -12,6 +12,6 @@ class ApplicationDatabaseProvider implements DatabaseProvider
 {
     public function getConnection(): Connection
     {
-        return new SQLiteAdapter(__DIR__ . '/../../database/database.sqlite');
+        return new SQLiteAdapter(__DIR__ . '/../../database.sqlite');
     }
 }

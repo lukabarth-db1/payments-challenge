@@ -41,7 +41,11 @@ class RouteHandler
                     $controller = new $controllerInstance();
                     /** @var Response $controllerResponse */
                     $controllerResponse = $controller->$controllerAction();
-                    return $controllerResponse->render();
+                    try {
+                        return $controllerResponse->render();
+                    } catch (\Throwable $e) {
+                        return JsonResponseFactory::badRequestError($e->getMessage())->render();
+                    }
                 }
             }
         }
