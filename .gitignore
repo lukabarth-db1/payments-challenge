@@ -8,6 +8,3 @@ database/
 
 composer.lock
 *.cache
-
-database.sqlite
-create-tables.php
