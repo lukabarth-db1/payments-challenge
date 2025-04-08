@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\API\Http\Provider;
 
-use App\API\Http\Controller\ExampleController;
 use App\API\Http\Controller\PaymentsController;
 use Phractico\Core\Infrastructure\Http\ControllerProvider;
 
