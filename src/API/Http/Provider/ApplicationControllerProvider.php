@@ -13,7 +13,6 @@ class ApplicationControllerProvider implements ControllerProvider
     public function getControllers(): array
     {
         return [
-            ExampleController::class,
             PaymentsController::class,
         ];
     }
