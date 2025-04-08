@@ -45,17 +45,41 @@ class PaymentsController implements Controller
 
     public function cancelPayment(): Response
     {
-        $this->deletePayment(6);
+        $request = RequestHandler::getIncomingRequest();
+        $this->requestBody = $this->decodeRequestBody($request);
+
+        $paymentId = $this->requestBody['payment']['id'];
+
+        $currentStatus = $this->getPaymentStatus($paymentId);
+
+        if ($currentStatus === 'canceled') {
+            return new JsonResponse(400, [
+                'error' => "payment id {$paymentId} is already canceled"
+            ]);
+        }
+
+        $this->updatePaymentStatus($paymentId);
 
         return new JsonResponse(200, [
-            'payment' => "payment canceled"
+            'payment' => "payment id '{$paymentId}' is canceled"
         ]);
     }
 
-    private function deletePayment(int $id): void
+    private function getPaymentStatus(int $paymentId): string
+    {
+        $statement = new Statement("SELECT status FROM payments WHERE id = {$paymentId} LIMIT 1");
+        $statement->returningResults();
+
+        $result = Database::execute($statement)->getRows()[0]['status'];
+
+        return $result;
+    }
+
+    private function updatePaymentStatus(int $id): void
     {
         $statement = DatabaseOperation::table('payments')
-            ->delete()
+            ->update()
+            ->data(['status' => 'canceled'])
             ->where('id', Comparison::EQUAL, $id)
             ->build();
         Database::execute($statement);
@@ -102,6 +126,7 @@ class PaymentsController implements Controller
             'amount' => $this->requestBody['payment']['amount'],
             'type' => $this->requestBody['payment']['type'],
             'country' => $this->requestBody['payment']['country'],
+            'status' => $this->requestBody['payment']['status'],
             'customer_id' => $this->getLastCustomerId(),
         ];
     }
