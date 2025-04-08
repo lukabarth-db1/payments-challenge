@@ -45,23 +45,20 @@ class PaymentsController implements Controller
 
     public function cancelPayment(): Response
     {
-        $this->deletePayment(4);
+        $this->deletePayment(6);
 
         return new JsonResponse(200, [
             'payment' => "payment canceled"
         ]);
     }
 
-    private function deletePayment(int $id): array
+    private function deletePayment(int $id): void
     {
         $statement = DatabaseOperation::table('payments')
             ->delete()
             ->where('id', Comparison::EQUAL, $id)
             ->build();
-
-        $result = Database::execute($statement)->getRows();
-
-        return $result;
+        Database::execute($statement);
     }
 
     private function decodeRequestBody(Request $request): array
