@@ -7,6 +7,7 @@ namespace App\API\Http\Controller;
 use GuzzleHttp\Psr7\Request;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Facades\DatabaseOperation;
+use Phractico\Core\Infrastructure\Database\Query\Grammar\Comparison;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
 use Phractico\Core\Infrastructure\Http\Controller;
 use Phractico\Core\Infrastructure\Http\Request\RequestHandler;
@@ -23,6 +24,7 @@ class PaymentsController implements Controller
     {
         $routes = RouteCollection::for($this);
         $routes->add(Route::create('POST', '/requestPayment'), 'createPayment');
+        $routes->add(Route::create('POST', '/cancelPayment'), 'cancelPayment');
         return $routes;
     }
 
@@ -39,6 +41,27 @@ class PaymentsController implements Controller
         return new JsonResponse(201, [
             'payment' => $payment
         ]);
+    }
+
+    public function cancelPayment(): Response
+    {
+        $this->deletePayment(4);
+
+        return new JsonResponse(200, [
+            'payment' => "payment canceled"
+        ]);
+    }
+
+    private function deletePayment(int $id): array
+    {
+        $statement = DatabaseOperation::table('payments')
+            ->delete()
+            ->where('id', Comparison::EQUAL, $id)
+            ->build();
+
+        $result = Database::execute($statement)->getRows();
+
+        return $result;
     }
 
     private function decodeRequestBody(Request $request): array
