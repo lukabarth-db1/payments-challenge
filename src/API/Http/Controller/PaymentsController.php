@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\API\Http\Controller;
 
+use GuzzleHttp\Psr7\Request;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Facades\DatabaseOperation;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
-use Phractico\Core\Infrastructure\Database\Result;
 use Phractico\Core\Infrastructure\Http\Controller;
 use Phractico\Core\Infrastructure\Http\Request\RequestHandler;
 use Phractico\Core\Infrastructure\Http\Request\Route;
@@ -26,17 +26,39 @@ class PaymentsController implements Controller
         return $routes;
     }
 
-    public function getRequestBody(): void
+    public function createPayment(): Response
     {
-        // Pegando o corpo da requisição
         $request = RequestHandler::getIncomingRequest();
-        $contents = $request->getBody()->getContents();
-        $this->requestBody = json_decode($contents, true);
+        $this->requestBody = $this->decodeRequestBody($request);
+
+        $this->persistCustomer();
+        $this->persistPayment();
+
+        $payment = $this->retrieveLastInsertedPayment();
+
+        return new JsonResponse(201, [
+            'payment' => $payment
+        ]);
     }
 
-    public function mappingValuesCustomer(): array
+    private function decodeRequestBody(Request $request): array
     {
-        // Mapeando valores do customer para a tabela customer do banco de dados
+        $contents = $request->getBody()->getContents();
+        return json_decode($contents, true);
+    }
+
+    private function persistCustomer(): void
+    {
+        $statement = DatabaseOperation::table('customers')
+            ->insert()
+            ->data($this->mappingValuesCustomers())
+            ->build();
+
+        Database::execute($statement);
+    }
+
+    private function mappingValuesCustomers(): array
+    {
         return [
             'name' => $this->requestBody['customer']['name'],
             'email' => $this->requestBody['customer']['email'],
@@ -44,74 +66,39 @@ class PaymentsController implements Controller
         ];
     }
 
-    public function prepareStatementCustomer(): void
+    private function persistPayment(): void
     {
-        // Preparando statement para inserção dos valores na tabela customer do banco de dados
-        $statement = DatabaseOperation::table('customers')
-            ->insert()
-            ->data($this->mappingValuesCustomer())
-            ->build();
-        Database::execute($statement);
-    }
-
-    public function getCustomerId(): int
-    {
-        // Recuperar valor do id na tabela customer do banco de dados
-        $statement = new Statement(
-            "SELECT * FROM customers ORDER BY id DESC LIMIT 1"
-        );
-        $statement->returningResults();
-        $result = Database::execute($statement);
-
-        return $result->getRows()[0]['id'];
-    }
-
-    public function mappingValuesPayments(): array
-    {
-        // Mapeando valores para tabela de pagamentos
-        return [
-            'amount' => $this->requestBody['payment']['amount'],
-            'type' => $this->requestBody['payment']['type'],
-            'country' => $this->requestBody['payment']['country'],
-            'customer_id' => $this->getCustomerId(),
-        ];
-    }
-
-    public function prepareStatementPayment(): void
-    {
-        // Preparando statement para inserção dos valores na tabela payment do banco de dados
         $statement = DatabaseOperation::table('payments')
             ->insert()
             ->data($this->mappingValuesPayments())
             ->build();
+
         Database::execute($statement);
     }
 
-    public function getPaymentValue(): Result
+    private function mappingValuesPayments(): array
     {
-        // Recuperando valor payment do banco de dados
-        $statement = new Statement(
-            "SELECT * FROM payments ORDER BY id DESC LIMIT 1"
-        );
+        return [
+            'amount' => $this->requestBody['payment']['amount'],
+            'type' => $this->requestBody['payment']['type'],
+            'country' => $this->requestBody['payment']['country'],
+            'customer_id' => $this->getLastCustomerId(),
+        ];
+    }
+
+    private function getLastCustomerId(): int
+    {
+        $statement = new Statement("SELECT id FROM customers ORDER BY id DESC LIMIT 1");
         $statement->returningResults();
 
-        return Database::execute($statement);
+        return Database::execute($statement)->getRows()[0]['id'];
     }
 
-    public function responseBodyInJson(): Response
+    private function retrieveLastInsertedPayment(): array
     {
-        // Preparando a resposta da requisição
-        $body = [
-            $this->getPaymentValue()->getRows()
-        ];
-        return new JsonResponse(201, $body);
-    }
+        $statement = new Statement("SELECT * FROM payments ORDER BY id DESC LIMIT 1");
+        $statement->returningResults();
 
-    public function createPayment(): Response
-    {
-        $this->getRequestBody();
-        $this->prepareStatementCustomer();
-        $this->prepareStatementPayment();
-        return $this->responseBodyInJson();
+        return Database::execute($statement)->getRows()[0];
     }
 }
