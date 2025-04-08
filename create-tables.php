@@ -14,7 +14,6 @@ $pdo->exec("
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         provider TEXT,
         operation TEXT,
-        status TEXT,
         payment_id INT,
         FOREIGN KEY(payment_id) REFERENCES artist(payments)
     );
@@ -24,6 +23,7 @@ $pdo->exec("
         amount REAL,
         type TEXT,
         country TEXT,
+        status TEXT,
         customer_id INT,
         FOREIGN KEY(customer_id) REFERENCES artist(customers)
     );
