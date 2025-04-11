@@ -25,6 +25,7 @@ class PaymentsController implements Controller
         $routes = RouteCollection::for($this);
         $routes->add(Route::create('POST', '/requestPayment'), 'createPayment');
         $routes->add(Route::create('POST', '/cancelPayment'), 'cancelPayment');
+        $routes->add(Route::create('POST', '/refundPayment'), 'refundPayment');
         return $routes;
     }
 
@@ -33,7 +34,6 @@ class PaymentsController implements Controller
         $request = RequestHandler::getIncomingRequest();
         $this->requestBody = $this->decodeRequestBody($request);
 
-        $this->persistCustomer();
         $this->persistPayment();
 
         $payment = $this->retrieveLastInsertedPayment();
@@ -49,6 +49,7 @@ class PaymentsController implements Controller
         $this->requestBody = $this->decodeRequestBody($request);
 
         $paymentId = $this->requestBody['payment']['id'];
+        $statusCanceled = 'canceled';
 
         $currentStatus = $this->getPaymentStatus($paymentId);
 
@@ -58,10 +59,33 @@ class PaymentsController implements Controller
             ]);
         }
 
-        $this->updatePaymentStatus($paymentId);
+        $this->updatePaymentStatus($paymentId, $statusCanceled);
 
         return new JsonResponse(200, [
             'payment' => "payment id '{$paymentId}' is canceled"
+        ]);
+    }
+
+    public function refundPayment(): Response
+    {
+        $request = RequestHandler::getIncomingRequest();
+        $this->requestBody = $this->decodeRequestBody($request);
+
+        $paymentId = $this->requestBody['payment']['id'];
+        $statusRefund = 'refund';
+
+        $currentStatus = $this->getPaymentStatus($paymentId);
+
+        if ($currentStatus === 'refund') {
+            return new JsonResponse(400, [
+                'error' => "payment id {$paymentId} is already refund"
+            ]);
+        }
+
+        $this->updatePaymentStatus($paymentId, $statusRefund);
+
+        return new JsonResponse(200, [
+            'message' => "payment id {$paymentId} refund"
         ]);
     }
 
@@ -75,11 +99,11 @@ class PaymentsController implements Controller
         return $result;
     }
 
-    private function updatePaymentStatus(int $id): void
+    private function updatePaymentStatus(int $id, string $status): void
     {
         $statement = DatabaseOperation::table('payments')
             ->update()
-            ->data(['status' => 'canceled'])
+            ->data(['status' => $status])
             ->where('id', Comparison::EQUAL, $id)
             ->build();
         Database::execute($statement);
@@ -127,8 +151,25 @@ class PaymentsController implements Controller
             'type' => $this->requestBody['payment']['type'],
             'country' => $this->requestBody['payment']['country'],
             'status' => $this->requestBody['payment']['status'],
-            'customer_id' => $this->getLastCustomerId(),
+            'customer_id' => $this->getOrCreateCustomerId(),
         ];
+    }
+
+    private function getOrCreateCustomerId(): int
+    {
+        $email = $this->requestBody['customer']['email'];
+
+        $statement = new Statement("SELECT id FROM customers WHERE email = '{$email}' LIMIT 1");
+        $statement->returningResults();
+
+        $result = Database::execute($statement)->getRows();
+
+        if (!empty($result)) {
+            return $result[0]['id'];
+        }
+
+        $this->persistCustomer();
+        return $this->getLastCustomerId();
     }
 
     private function getLastCustomerId(): int
