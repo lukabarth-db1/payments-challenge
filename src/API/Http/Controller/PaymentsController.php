@@ -24,6 +24,7 @@ class PaymentsController implements Controller
     {
         $routes = RouteCollection::for($this);
         $routes->add(Route::create('POST', '/requestPayment'), 'createPayment');
+        $routes->add(Route::create('POST', '/confirmPayment'), 'confirmPayment');
         $routes->add(Route::create('POST', '/cancelPayment'), 'cancelPayment');
         $routes->add(Route::create('POST', '/refundPayment'), 'refundPayment');
         return $routes;
@@ -43,6 +44,29 @@ class PaymentsController implements Controller
         ]);
     }
 
+    public function confirmPayment(): Response
+    {
+        $request = RequestHandler::getIncomingRequest();
+        $this->requestBody = $this->decodeRequestBody($request);
+
+        $paymentId = $this->requestBody['payment']['id'];
+        $statusConfirmed = 'confirmed';
+
+        $currentStatus = $this->getPaymentStatus($paymentId);
+
+        if ($currentStatus !== 'pending') {
+            return new JsonResponse(400, [
+                'error' => "payment id {$paymentId} cannot be confirm"
+            ]);
+        }
+
+        $this->updatePaymentStatus($paymentId, $statusConfirmed);
+
+        return new JsonResponse(200, [
+            'message' => 'payment confirmed'
+        ]);
+    }
+
     public function cancelPayment(): Response
     {
         $request = RequestHandler::getIncomingRequest();
@@ -53,9 +77,9 @@ class PaymentsController implements Controller
 
         $currentStatus = $this->getPaymentStatus($paymentId);
 
-        if ($currentStatus === 'canceled') {
+        if ($currentStatus !== 'pending') {
             return new JsonResponse(400, [
-                'error' => "payment id {$paymentId} is already canceled"
+                'error' => "payment id {$paymentId} cannot be cancel"
             ]);
         }
 
@@ -76,9 +100,9 @@ class PaymentsController implements Controller
 
         $currentStatus = $this->getPaymentStatus($paymentId);
 
-        if ($currentStatus === 'refund') {
+        if ($currentStatus !== 'confirmed') {
             return new JsonResponse(400, [
-                'error' => "payment id {$paymentId} is already refund"
+                'error' => "payment id {$paymentId} cannot be refunded"
             ]);
         }
 
