@@ -91,7 +91,7 @@ class PaymentsController implements Controller
 
     private function getPaymentStatus(int $paymentId): string
     {
-        $statement = new Statement("SELECT status FROM payments WHERE id = {$paymentId} LIMIT 1");
+        $statement = new Statement("SELECT status FROM payments WHERE id = {$paymentId}");
         $statement->returningResults();
 
         $result = Database::execute($statement)->getRows()[0]['status'];
@@ -159,7 +159,7 @@ class PaymentsController implements Controller
     {
         $email = $this->requestBody['customer']['email'];
 
-        $statement = new Statement("SELECT id FROM customers WHERE email = '{$email}' LIMIT 1");
+        $statement = new Statement("SELECT id FROM customers WHERE email = '{$email}'");
         $statement->returningResults();
 
         $result = Database::execute($statement)->getRows();
