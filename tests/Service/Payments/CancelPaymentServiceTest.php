@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Tests\Service;
+declare(strict_types=1);
+
+namespace App\Service\Payments;
 
 use App\Database\Connection\SQLiteAdapter;
-use App\Service\Payments\CreatePaymentService;
 use PHPUnit\Framework\TestCase;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Infrastructure\Database\DatabaseConnection;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
 
-class CreatePaymentServiceTest extends TestCase
+class CancelPaymentServiceTest extends TestCase
 {
     /**
      * @before
@@ -20,34 +21,34 @@ class CreatePaymentServiceTest extends TestCase
         DatabaseConnection::setConnection($connection);
     }
 
-    public function testExecute_ShouldPersistPaymentInDatabase(): void
+    public function testExecute_ShouldCancelPaymentInDatabase(): void
     {
         // arrange - prepare test
         $requestBody = [
             'payment' => [
-                'type' => 'PHPUnitConfirm',
+                'type' => 'PHPUnitCancel',
                 'country' => 'BR',
-                'amount' => 1552.48
+                'amount' => 2550.98
             ],
             'customer' => [
-                'name' => 'PHP Confirm',
-                'email' => 'phpunitconfirm@email.com',
-                'document' => '45687125963'
+                'name' => 'PHP Cancel',
+                'email' => 'phpunitcancel@email.com',
+                'document' => '45889645896'
             ]
         ];
 
         $createPaymentService = new CreatePaymentService($requestBody);
+        $payment = $createPaymentService->execute();
+        $paymentId = $payment['id'];
 
         // act - run test
-        $createPaymentService->execute();
+        $cancelPaymentService = new CancelPaymentService();
+        $cancelPaymentService->execute($paymentId);
 
         // assert - check assert
         $lastInsertedPayment = $this->retrieveLastInsertedPayment();
 
-        $this->assertEquals('pending', $lastInsertedPayment['status']);
-        $this->assertEquals($lastInsertedPayment['amount'], $requestBody['payment']['amount']);
-        $this->assertEquals($lastInsertedPayment['type'], $requestBody['payment']['type']);
-        $this->assertEquals($lastInsertedPayment['country'], $requestBody['payment']['country']);
+        $this->assertEquals('canceled', $lastInsertedPayment['status']);
     }
 
     private function retrieveLastInsertedPayment(): array

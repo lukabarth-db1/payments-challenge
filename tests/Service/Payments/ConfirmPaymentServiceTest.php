@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Tests\Service;
+declare(strict_types=1);
+
+namespace App\Service\Payments;
 
 use App\Database\Connection\SQLiteAdapter;
-use App\Service\Payments\CreatePaymentService;
 use PHPUnit\Framework\TestCase;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Infrastructure\Database\DatabaseConnection;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
 
-class CreatePaymentServiceTest extends TestCase
+class ConfirmPaymentServiceTest extends TestCase
 {
     /**
      * @before
@@ -20,31 +21,34 @@ class CreatePaymentServiceTest extends TestCase
         DatabaseConnection::setConnection($connection);
     }
 
-    public function testExecute_ShouldPersistPaymentInDatabase(): void
+    public function testExecute_ShouldConfirmPaymentInDatabase(): void
     {
         // arrange - prepare test
         $requestBody = [
             'payment' => [
-                'type' => 'PHPUnitConfirm',
+                'type' => 'PHPUnit',
                 'country' => 'BR',
                 'amount' => 1552.48
             ],
             'customer' => [
-                'name' => 'PHP Confirm',
-                'email' => 'phpunitconfirm@email.com',
+                'name' => 'PHP',
+                'email' => 'phpunit@email.com',
                 'document' => '45687125963'
             ]
         ];
 
         $createPaymentService = new CreatePaymentService($requestBody);
+        $payment = $createPaymentService->execute();
+        $paymentId = $payment['id'];
 
         // act - run test
-        $createPaymentService->execute();
+        $confirmPaymentService = new ConfirmPaymentService();
+        $confirmPaymentService->execute($paymentId);
 
         // assert - check assert
         $lastInsertedPayment = $this->retrieveLastInsertedPayment();
 
-        $this->assertEquals('pending', $lastInsertedPayment['status']);
+        $this->assertEquals('confirmed', $lastInsertedPayment['status']);
         $this->assertEquals($lastInsertedPayment['amount'], $requestBody['payment']['amount']);
         $this->assertEquals($lastInsertedPayment['type'], $requestBody['payment']['type']);
         $this->assertEquals($lastInsertedPayment['country'], $requestBody['payment']['country']);
