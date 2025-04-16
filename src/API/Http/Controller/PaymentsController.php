@@ -9,6 +9,7 @@ use App\Gateway\PagueFacil;
 use App\Service\Payments\CancelPaymentService;
 use App\Service\Payments\ConfirmPaymentService;
 use App\Service\Payments\CreatePaymentService;
+use App\Service\Payments\PaymentStatusService;
 use App\Service\Payments\RefundPaymentService;
 use App\Service\Providers\ProviderLogService;
 use DomainException;
@@ -24,7 +25,8 @@ class PaymentsController implements Controller
 {
     public function __construct(
         private PaymentGatewayInterface $paymentGateway = new PagueFacil(),
-        private ProviderLogService $providerLogService = new ProviderLogService()
+        private ProviderLogService $providerLogService = new ProviderLogService(),
+        private PaymentStatusService $paymentStatusService = new PaymentStatusService(),
     ) {}
 
     private array $requestBody = [];
@@ -71,7 +73,7 @@ class PaymentsController implements Controller
         $paymentId = $this->requestBody['payment']['id'];
 
         try {
-            $service = new ConfirmPaymentService($this->requestBody);
+            $service = new ConfirmPaymentService($this->paymentStatusService);
             $service->execute($paymentId);
 
             return new JsonResponse(200, [
@@ -92,7 +94,7 @@ class PaymentsController implements Controller
         $paymentId = $this->requestBody['payment']['id'];
 
         try {
-            $service = new CancelPaymentService($this->requestBody);
+            $service = new CancelPaymentService($this->paymentStatusService);
             $service->execute($paymentId);
             return new JsonResponse(200, [
                 'message' => 'payment canceled'
@@ -112,7 +114,7 @@ class PaymentsController implements Controller
         $paymentId = $this->requestBody['payment']['id'];
 
         try {
-            $service = new RefundPaymentService($this->requestBody);
+            $service = new RefundPaymentService($this->paymentStatusService);
             $service->execute($paymentId);
             return new JsonResponse(200, [
                 'message' => 'payment refunded'
