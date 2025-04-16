@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Payments;
 
+use App\Helpers\PaymentStatus;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Facades\DatabaseOperation;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
@@ -43,7 +44,7 @@ class CreatePaymentService
             'amount' => $this->requestBody['payment']['amount'],
             'type' => $this->requestBody['payment']['type'],
             'country' => $this->requestBody['payment']['country'],
-            'status' => 'pending',
+            'status' => PaymentStatus::PENDING,
             'customer_id' => $this->getOrCreateCustomerId(),
         ];
     }
@@ -75,7 +76,7 @@ class CreatePaymentService
         Database::execute($statement);
     }
 
-    private function mappingValuesCustomers(): array
+    private function mappingValuesCustomers(): ?array
     {
         return [
             'name' => $this->requestBody['customer']['name'],

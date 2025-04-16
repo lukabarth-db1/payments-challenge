@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace App\Service\Payments;
 
+use App\Helpers\PaymentStatus;
 use DomainException;
 
 class ConfirmPaymentService
 {
+    public function __construct(private PaymentStatusService $paymentStatusService) {}
+
     public function execute(int $paymentId): void
     {
         $confirmedStatus = 'confirmed';
-        $paymentStatusService = new PaymentStatusService();
 
-        $currentStatus = $paymentStatusService->getStatus($paymentId);
+        $currentStatus = $this->paymentStatusService->getStatus($paymentId);
 
-        if ($currentStatus !== 'pending') {
-            throw new DomainException("payment id {$paymentId} cannot be confirm");
+        if ($currentStatus !== PaymentStatus::PENDING) {
+            throw new DomainException("payment id {$paymentId} cannot be confirmed");
         }
 
-        $paymentStatusService->updatePaymentStatus($paymentId, $confirmedStatus);
+        $this->paymentStatusService->updatePaymentStatus($paymentId, $confirmedStatus);
     }
 }
