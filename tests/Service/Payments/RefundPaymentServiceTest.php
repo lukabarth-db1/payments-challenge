@@ -6,6 +6,7 @@ namespace Service\Payments;
 
 use App\Service\Payments\CancelPaymentService;
 use App\Service\Payments\CreatePaymentService;
+use App\Service\Payments\PaymentStatusService;
 use PHPUnit\Framework\TestCase;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
@@ -29,11 +30,13 @@ class RefundPaymentServiceTest extends TestCase
         ];
 
         $createPaymentService = new CreatePaymentService($requestBody);
-        $payment = $createPaymentService->execute();
-        $paymentId = $payment['id'];
+        $paymentStatusService = new PaymentStatusService();
+        $cancelPaymentService = new CancelPaymentService($paymentStatusService);
 
         // act - run test
-        $cancelPaymentService = new CancelPaymentService();
+        $payment = $createPaymentService->execute();
+
+        $paymentId = $payment['id'];
         $cancelPaymentService->execute($paymentId);
 
         // assert - check assert

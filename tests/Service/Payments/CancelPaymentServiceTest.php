@@ -42,7 +42,8 @@ class CancelPaymentServiceTest extends TestCase
         $paymentId = $payment['id'];
 
         // act - run test
-        $cancelPaymentService = new CancelPaymentService();
+        $paymentStatusService = new PaymentStatusService();
+        $cancelPaymentService = new CancelPaymentService($paymentStatusService);
         $cancelPaymentService->execute($paymentId);
 
         // assert - check assert

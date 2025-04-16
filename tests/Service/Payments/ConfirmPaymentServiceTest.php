@@ -38,11 +38,13 @@ class ConfirmPaymentServiceTest extends TestCase
         ];
 
         $createPaymentService = new CreatePaymentService($requestBody);
-        $payment = $createPaymentService->execute();
-        $paymentId = $payment['id'];
+        $paymentStatusService = new PaymentStatusService();
+        $confirmPaymentService = new ConfirmPaymentService($paymentStatusService);
 
         // act - run test
-        $confirmPaymentService = new ConfirmPaymentService();
+        $payment = $createPaymentService->execute();
+
+        $paymentId = $payment['id'];
         $confirmPaymentService->execute($paymentId);
 
         // assert - check assert
