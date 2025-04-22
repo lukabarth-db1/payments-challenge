@@ -6,11 +6,13 @@ namespace App\API\Http\Controller;
 
 use App\Gateway\Contracts\PaymentGatewayInterface;
 use App\Gateway\PagueFacil;
+use App\Service\Customers\CreateCustomerService;
 use App\Service\Payments\CancelPaymentService;
 use App\Service\Payments\ConfirmPaymentService;
 use App\Service\Payments\CreatePaymentService;
 use App\Service\Payments\PaymentStatusService;
 use App\Service\Payments\RefundPaymentService;
+use App\Service\Payments\RequestPaymentService;
 use App\Service\Providers\ProviderLogService;
 use DomainException;
 use GuzzleHttp\Psr7\Request;
@@ -27,6 +29,7 @@ class PaymentsController implements Controller
         private PaymentGatewayInterface $paymentGateway = new PagueFacil(),
         private ProviderLogService $providerLogService = new ProviderLogService(),
         private PaymentStatusService $paymentStatusService = new PaymentStatusService(),
+        private CreateCustomerService $createCustomerService = new CreateCustomerService([]),
     ) {}
 
     private array $requestBody = [];
@@ -46,22 +49,16 @@ class PaymentsController implements Controller
         $request = RequestHandler::getIncomingRequest();
         $this->requestBody = $this->decodeRequestBody($request);
 
-        $operationType = 'create';
-
-        $gatewayResponse = $this->paymentGateway->create($this->requestBody);
-
-        $createPaymentService = new CreatePaymentService($this->requestBody);
-        $payment = $createPaymentService->execute();
-
-        $this->providerLogService->log(
-            $gatewayResponse['gateway'],
-            $operationType,
-            $payment['id']
+        $paymentService = new RequestPaymentService(
+            $this->paymentGateway,
+            $this->providerLogService,
         );
+
+        $payment = $paymentService->handle($this->requestBody);
 
         return new JsonResponse(201, [
             'payment' => $payment,
-            'provider_logs' => "Payment successfuly created by {$gatewayResponse['gateway']}",
+            'provider_logs' => "Payment successfuly created",
         ]);
     }
 
