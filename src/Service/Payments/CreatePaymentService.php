@@ -6,6 +6,7 @@ namespace App\Service\Payments;
 
 use App\Domain\Payment;
 use App\Helpers\PaymentStatus;
+use App\Service\Payments\Dto\CreatePaymentInfo;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Facades\DatabaseOperation;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
@@ -13,8 +14,7 @@ use Phractico\Core\Infrastructure\Database\Query\Statement;
 class CreatePaymentService
 {
     public function __construct(
-        private readonly array $requestBody,
-        private readonly int $customerId,
+        private readonly CreatePaymentInfo $paymentInfo,
     ) {}
 
     public function execute(): Payment
@@ -53,11 +53,11 @@ class CreatePaymentService
     private function mappingValuesPayments(): array
     {
         return [
-            'amount' => $this->requestBody['payment']['amount'],
-            'type' => $this->requestBody['payment']['type'],
-            'country' => $this->requestBody['payment']['country'],
+            'amount' => $this->paymentInfo->amount,
+            'type' => $this->paymentInfo->type,
+            'country' => $this->paymentInfo->country,
             'status' => PaymentStatus::PENDING,
-            'customer_id' => $this->customerId,
+            'customer_id' => $this->paymentInfo->customerId,
         ];
     }
 }

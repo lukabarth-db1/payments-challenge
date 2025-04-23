@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace App\Service\Customers;
 
+use App\Service\Customers\Dto\CreateCustomerInfo;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Facades\DatabaseOperation;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
 
 class CreateCustomerService
 {
-    public function __construct(private readonly array $requestBody) {}
-
-    public function getOrCreateCustomerId(): int
+    public function getOrCreateCustomerId(CreateCustomerInfo $customerInfo): int
     {
-        $email = $this->requestBody['customer']['email'];
+        $email = $customerInfo->email;
 
         $statement = new Statement("SELECT id FROM customers WHERE email = '{$email}'");
         $statement->returningResults();
@@ -25,26 +24,26 @@ class CreateCustomerService
             return $result[0]['id'];
         }
 
-        $this->persistCustomer();
+        $this->persistCustomer($customerInfo);
         return $this->getLastCustomerId();
     }
 
-    private function persistCustomer(): void
+    private function persistCustomer(CreateCustomerInfo $customerInfo): void
     {
         $statement = DatabaseOperation::table('customers')
             ->insert()
-            ->data($this->mappingValuesCustomers())
+            ->data($this->mappingValuesCustomers($customerInfo))
             ->build();
 
         Database::execute($statement);
     }
 
-    private function mappingValuesCustomers(): array
+    private function mappingValuesCustomers(CreateCustomerInfo $customerInfo): array
     {
         return [
-            'name' => $this->requestBody['customer']['name'],
-            'email' => $this->requestBody['customer']['email'],
-            'document' => $this->requestBody['customer']['document'],
+            'name' => $customerInfo->name,
+            'email' => $customerInfo->email,
+            'document' => $customerInfo->document,
         ];
     }
 
