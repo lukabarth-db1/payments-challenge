@@ -13,13 +13,9 @@ use Phractico\Core\Infrastructure\Database\Query\Statement;
 
 class CreatePaymentService
 {
-    public function __construct(
-        private readonly CreatePaymentInfo $paymentInfo,
-    ) {}
-
-    public function execute(): Payment
+    public function execute(CreatePaymentInfo $paymentInfo): Payment
     {
-        $this->persistPayment();
+        $this->persistPayment($paymentInfo);
 
         return $this->getLastInsertedPayment();
     }
@@ -40,24 +36,24 @@ class CreatePaymentService
         );
     }
 
-    private function persistPayment(): void
+    private function persistPayment(CreatePaymentInfo $paymentInfo): void
     {
         $statement = DatabaseOperation::table('payments')
             ->insert()
-            ->data($this->mappingValuesPayments())
+            ->data($this->mappingValuesPayments($paymentInfo))
             ->build();
 
         Database::execute($statement);
     }
 
-    private function mappingValuesPayments(): array
+    private function mappingValuesPayments(CreatePaymentInfo $paymentInfo): array
     {
         return [
-            'amount' => $this->paymentInfo->amount,
-            'type' => $this->paymentInfo->type,
-            'country' => $this->paymentInfo->country,
+            'amount' => $paymentInfo->amount,
+            'type' => $paymentInfo->type,
+            'country' => $paymentInfo->country,
             'status' => PaymentStatus::PENDING,
-            'customer_id' => $this->paymentInfo->customerId,
+            'customer_id' => $paymentInfo->customerId,
         ];
     }
 }

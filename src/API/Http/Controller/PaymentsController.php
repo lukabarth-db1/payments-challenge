@@ -30,6 +30,7 @@ class PaymentsController implements Controller
         private ProviderLogService $providerLogService = new ProviderLogService(),
         private PaymentStatusService $paymentStatusService = new PaymentStatusService(),
         private CreateCustomerService $createCustomerService = new CreateCustomerService([]),
+        private CreatePaymentService $createPaymentService = new CreatePaymentService(),
     ) {}
 
     private array $requestBody = [];
@@ -52,6 +53,8 @@ class PaymentsController implements Controller
         $paymentService = new RequestPaymentService(
             $this->paymentGateway,
             $this->providerLogService,
+            $this->createCustomerService,
+            $this->createPaymentService,
         );
 
         $payment = $paymentService->handle($this->requestBody);

@@ -44,8 +44,7 @@ class RequestPaymentService
             $customerId,
         );
 
-        $createPaymentService = new CreatePaymentService($createPaymentInfo);
-        $payment = $createPaymentService->execute();
+        $payment = $this->createPaymentService->execute($createPaymentInfo);
 
         $this->logService->log(
             $gatewayResponse['gateway'],
