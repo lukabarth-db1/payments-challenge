@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\API\Http\Controller;
 
-use App\Gateway\Contracts\PaymentGatewayInterface;
-use App\Gateway\PagueFacil;
-use App\Service\Customers\CreateCustomerService;
-use App\Service\Payments\CancelPaymentService;
-use App\Service\Payments\ConfirmPaymentService;
-use App\Service\Payments\CreatePaymentService;
-use App\Service\Payments\PaymentStatusService;
-use App\Service\Payments\RefundPaymentService;
-use App\Service\Payments\RequestPaymentService;
-use App\Service\Providers\ProviderLogService;
+use App\Service\Customers\Dto\CreateCustomerInfo;
+use App\Service\Dto\RequestPaymentData;
+use App\Service\Payments\RequestPaymentService\HandleRequestPayment;
+use App\Service\Payments\RequestPaymentService\ConfirmPaymentHandler;
+use App\Service\Payments\RequestPaymentService\CancelPaymentHandler;
+use App\Service\Payments\RequestPaymentService\RefundPaymentHandler;
 use DomainException;
 use GuzzleHttp\Psr7\Request;
 use Phractico\Core\Infrastructure\Http\Controller;
@@ -26,11 +22,10 @@ use Phractico\Core\Infrastructure\Http\Response\JsonResponse;
 class PaymentsController implements Controller
 {
     public function __construct(
-        private PaymentGatewayInterface $paymentGateway = new PagueFacil(),
-        private ProviderLogService $providerLogService = new ProviderLogService(),
-        private PaymentStatusService $paymentStatusService = new PaymentStatusService(),
-        private CreateCustomerService $createCustomerService = new CreateCustomerService([]),
-        private CreatePaymentService $createPaymentService = new CreatePaymentService(),
+        private HandleRequestPayment $handleRequestPayment,
+        private ConfirmPaymentHandler $confirmPaymentHandler,
+        private CancelPaymentHandler $cancelPaymentHandler,
+        private RefundPaymentHandler $refundPaymentHandler,
     ) {}
 
     private array $requestBody = [];
@@ -50,14 +45,18 @@ class PaymentsController implements Controller
         $request = RequestHandler::getIncomingRequest();
         $this->requestBody = $this->decodeRequestBody($request);
 
-        $paymentService = new RequestPaymentService(
-            $this->paymentGateway,
-            $this->providerLogService,
-            $this->createCustomerService,
-            $this->createPaymentService,
+        $dto = new RequestPaymentData(
+            paymentAmount: $this->requestBody['payment']['amount'],
+            paymentType: $this->requestBody['payment']['type'],
+            paymentCountry: $this->requestBody['payment']['country'],
+            customer: new CreateCustomerInfo(
+                $this->requestBody['customer']['name'],
+                $this->requestBody['customer']['email'],
+                $this->requestBody['customer']['document'],
+            ),
         );
 
-        $payment = $paymentService->handle($this->requestBody);
+        $payment = ($this->handleRequestPayment)($dto);
 
         return new JsonResponse(201, [
             'payment' => $payment,
@@ -70,11 +69,8 @@ class PaymentsController implements Controller
         $request = RequestHandler::getIncomingRequest();
         $this->requestBody = $this->decodeRequestBody($request);
 
-        $paymentId = $this->requestBody['payment']['id'];
-
         try {
-            $service = new ConfirmPaymentService($this->paymentStatusService);
-            $service->execute($paymentId);
+            ($this->confirmPaymentHandler)($this->requestBody['payment']['id']);
 
             return new JsonResponse(200, [
                 'message' => 'payment confirmed'
@@ -91,11 +87,9 @@ class PaymentsController implements Controller
         $request = RequestHandler::getIncomingRequest();
         $this->requestBody = $this->decodeRequestBody($request);
 
-        $paymentId = $this->requestBody['payment']['id'];
-
         try {
-            $service = new CancelPaymentService($this->paymentStatusService);
-            $service->execute($paymentId);
+            ($this->cancelPaymentHandler)($this->requestBody['payment']['id']);
+
             return new JsonResponse(200, [
                 'message' => 'payment canceled'
             ]);
@@ -111,11 +105,9 @@ class PaymentsController implements Controller
         $request = RequestHandler::getIncomingRequest();
         $this->requestBody = $this->decodeRequestBody($request);
 
-        $paymentId = $this->requestBody['payment']['id'];
-
         try {
-            $service = new RefundPaymentService($this->paymentStatusService);
-            $service->execute($paymentId);
+            ($this->refundPaymentHandler)($this->requestBody['payment']['id']);
+
             return new JsonResponse(200, [
                 'message' => 'payment refunded'
             ]);
