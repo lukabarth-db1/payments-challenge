@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Payments;
 
+use App\Exceptions\PaymentStatusException;
 use App\Helpers\PaymentStatus;
 use DomainException;
 
@@ -18,7 +19,7 @@ class ConfirmPaymentService
         $currentStatus = $this->paymentStatusService->getStatus($paymentId);
 
         if ($currentStatus !== PaymentStatus::PENDING) {
-            throw new DomainException("payment id {$paymentId} cannot be confirmed");
+            throw new PaymentStatusException($currentStatus);
         }
 
         $this->paymentStatusService->updatePaymentStatus($paymentId, $confirmedStatus);
