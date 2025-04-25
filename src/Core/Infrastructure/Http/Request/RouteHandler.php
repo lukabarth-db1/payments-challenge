@@ -6,6 +6,7 @@ namespace Phractico\Core\Infrastructure\Http\Request;
 
 use Phractico\Core\Infrastructure\Http\Controller;
 use Phractico\Core\Infrastructure\Http\Response;
+use Phractico\Core\Infrastructure\DI\ContainerRegistry;
 use Phractico\Core\Infrastructure\Http\Response\Factory\JsonResponseFactory;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -20,7 +21,8 @@ class RouteHandler
         foreach ($controllers as $instance) {
             if (!isset(self::$stack[$instance])) {
                 /** @var Controller $controller */
-                $controller = new $instance();
+                $container = ContainerRegistry::getContainer();
+                $controller = $container->get($instance);
                 $routes = $controller->routes();
                 self::$stack[$instance] = $routes->getRoutesMapping();
             }
@@ -34,11 +36,13 @@ class RouteHandler
         $resource = $request->getRequestTarget();
         $route = Route::create($httpMethod, $resource);
 
+        $container = ContainerRegistry::getContainer();
+
         foreach (self::$stack as $controllerInstance => $controllerRouteMapping) {
             /** @var Route $controllerRoute */
             foreach ($controllerRouteMapping as $controllerAction => $controllerRoute) {
                 if ($controllerRoute->match($route)) {
-                    $controller = new $controllerInstance();
+                    $controller = $container->get($controllerInstance);
                     /** @var Response $controllerResponse */
                     $controllerResponse = $controller->$controllerAction();
                     try {
