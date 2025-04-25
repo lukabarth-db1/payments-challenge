@@ -2,14 +2,11 @@
 
 namespace App\Gateway\Contracts\Dto;
 
-use App\Gateway\GatewayOperation;
-
-class GatewayPaymentRequestInfo
+class GatewayPaymentInfo
 {
     public function __construct(
-        public readonly string $provider,
-        public readonly GatewayOperation $operation,
+        public readonly float $amount,
+        public readonly string $type,
         public readonly string $country,
-        public readonly int $paymentId,
     ) {}
 }
