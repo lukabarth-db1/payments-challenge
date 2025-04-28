@@ -2,9 +2,10 @@
 
 namespace App\Helpers;
 
-class PaymentStatus
+enum PaymentStatus: string
 {
-    public const PENDING = 'pending';
-    public const CONFIRMED = 'confirmed';
-    public const CANCELED = 'canceled';
+    case PENDING = 'pending';
+    case CONFIRMED = 'confirmed';
+    case REFUND = 'refunded';
+    case CANCELED = 'canceled';
 }
