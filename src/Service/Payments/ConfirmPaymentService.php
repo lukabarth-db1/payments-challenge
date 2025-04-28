@@ -6,22 +6,30 @@ namespace App\Service\Payments;
 
 use App\Exceptions\PaymentStatusException;
 use App\Helpers\PaymentStatus;
-use DomainException;
+use App\Service\Payments\Dto\ProviderStatusInfo;
+use App\Service\Providers\ProviderLogService;
 
 class ConfirmPaymentService
 {
-    public function __construct(private PaymentStatusService $paymentStatusService) {}
+    public function __construct(
+        private PaymentStatusService $paymentStatusService,
+        private readonly ProviderLogService $logService,
+    ) {}
 
-    public function execute(int $paymentId): void
+    public function execute(ProviderStatusInfo $paymentInfo): void
     {
-        $confirmedStatus = 'confirmed';
+        $currentStatus = $this->paymentStatusService->getStatus($paymentInfo->paymentId);
 
-        $currentStatus = $this->paymentStatusService->getStatus($paymentId);
-
-        if ($currentStatus !== PaymentStatus::PENDING) {
+        if ($currentStatus !== PaymentStatus::PENDING->value) {
             throw new PaymentStatusException($currentStatus);
         }
 
-        $this->paymentStatusService->updatePaymentStatus($paymentId, $confirmedStatus);
+        $this->paymentStatusService->updatePaymentStatus($paymentInfo->paymentId, PaymentStatus::CONFIRMED->value);
+
+        $this->logService->log(
+            $paymentInfo->provider,
+            $paymentInfo->operation,
+            $paymentInfo->paymentId,
+        );
     }
 }

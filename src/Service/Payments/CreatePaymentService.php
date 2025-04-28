@@ -29,7 +29,7 @@ class CreatePaymentService
 
         return new Payment(
             id: $paymentRow['id'],
-            amount: (string)$paymentRow['amount'],
+            amount: $paymentRow['amount'],
             type: $paymentRow['type'],
             country: $paymentRow['country'],
             status: $paymentRow['status']
@@ -52,7 +52,7 @@ class CreatePaymentService
             'amount' => $paymentInfo->amount,
             'type' => $paymentInfo->type,
             'country' => $paymentInfo->country,
-            'status' => PaymentStatus::PENDING,
+            'status' => PaymentStatus::PENDING->value,
             'customer_id' => $paymentInfo->customerId,
         ];
     }

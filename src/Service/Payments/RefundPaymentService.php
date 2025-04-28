@@ -5,22 +5,31 @@ declare(strict_types=1);
 namespace App\Service\Payments;
 
 use App\Helpers\PaymentStatus;
+use App\Service\Payments\Dto\ProviderStatusInfo;
+use App\Service\Providers\ProviderLogService;
 use DomainException;
 
 class RefundPaymentService
 {
-    public function __construct(private PaymentStatusService $paymentStatusService) {}
+    public function __construct(
+        private PaymentStatusService $paymentStatusService,
+        private readonly ProviderLogService $logService,
+    ) {}
 
-    public function execute(int $paymentId): void
+    public function execute(ProviderStatusInfo $paymentInfo): void
     {
-        $refundStatus = 'refund';
+        $currentStatus = $this->paymentStatusService->getStatus($paymentInfo->paymentId);
 
-        $currentStatus = $this->paymentStatusService->getStatus($paymentId);
-
-        if ($currentStatus !== PaymentStatus::CONFIRMED) {
-            throw new DomainException("payment id {$paymentId} cannot be refunded");
+        if ($currentStatus !== PaymentStatus::CONFIRMED->value) {
+            throw new DomainException("payment id {$paymentInfo->paymentId} cannot be refunded");
         }
 
-        $this->paymentStatusService->updatePaymentStatus($paymentId, $refundStatus);
+        $this->paymentStatusService->updatePaymentStatus($paymentInfo->paymentId, PaymentStatus::REFUND->value);
+
+        $this->logService->log(
+            $paymentInfo->provider,
+            $paymentInfo->operation,
+            $paymentInfo->paymentId,
+        );
     }
 }

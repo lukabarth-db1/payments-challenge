@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service\Payments\RequestPaymentService;
 
+use App\Gateway\GatewayOperation;
 use App\Service\Payments\CancelPaymentService;
+use App\Service\Payments\Dto\ProviderStatusInfo;
 
 class CancelPaymentHandler
 {
@@ -12,6 +14,12 @@ class CancelPaymentHandler
 
     public function __invoke(int $paymentId): void
     {
-        $this->cancelPaymentService->execute($paymentId);
+        $cancelPaymentInfo = new ProviderStatusInfo(
+            paymentId: $paymentId,
+            provider: 'PagueFacil',
+            operation: GatewayOperation::CANCEL->value,
+        );
+
+        $this->cancelPaymentService->execute($cancelPaymentInfo);
     }
 }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service\Payments\RequestPaymentService;
 
+use App\Gateway\GatewayOperation;
 use App\Service\Payments\ConfirmPaymentService;
+use App\Service\Payments\Dto\ProviderStatusInfo;
 
 class ConfirmPaymentHandler
 {
@@ -12,6 +14,12 @@ class ConfirmPaymentHandler
 
     public function __invoke(int $paymentId): void
     {
-        $this->confirmPaymentService->execute($paymentId);
+        $confirmPaymentInfo = new ProviderStatusInfo(
+            paymentId: $paymentId,
+            provider: 'PagueFacil',
+            operation: GatewayOperation::CONFIRM->value,
+        );
+
+        $this->confirmPaymentService->execute($confirmPaymentInfo);
     }
 }

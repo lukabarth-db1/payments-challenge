@@ -7,7 +7,6 @@ namespace App\Service\Payments;
 use App\Domain\Payment;
 use App\Gateway\Contracts\Dto\GatewayPaymentInfo;
 use App\Gateway\Contracts\PaymentGateway;
-use App\Gateway\GatewayOperation;
 use App\Service\Customers\CreateCustomerService;
 use App\Service\Dto\RequestPaymentData;
 use App\Service\Payments\Dto\CreatePaymentInfo;
@@ -22,14 +21,15 @@ class RequestPaymentService
         private readonly CreatePaymentService $createPaymentService,
     ) {}
 
-    public function handle(RequestPaymentData $data): Payment
+    public function handle(RequestPaymentData $data, string $gatewayStatus): Payment
     {
         $gatewayResponse = $this->gateway->create(
             new GatewayPaymentInfo(
                 amount: $data->paymentAmount,
                 type: $data->paymentType,
                 country: $data->paymentCountry,
-            )
+            ),
+            $gatewayStatus
         );
 
         $customerId = $this->createCustomerService->getOrCreateCustomerId($data->customer);
@@ -45,7 +45,7 @@ class RequestPaymentService
 
         $this->logService->log(
             $gatewayResponse->gateway,
-            GatewayOperation::CREATE->value,
+            $gatewayStatus,
             $payment->id,
         );
 
