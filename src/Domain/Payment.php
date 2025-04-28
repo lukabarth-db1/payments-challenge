@@ -8,7 +8,7 @@ class Payment
 {
     public function __construct(
         public readonly int $id,
-        public readonly string $amount,
+        public readonly float $amount,
         public readonly string $status,
         public readonly string $type,
         public readonly string $country
