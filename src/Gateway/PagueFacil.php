@@ -11,7 +11,7 @@ use App\Gateway\Contracts\Dto\GatewayResponse;
 
 class PagueFacil implements PaymentGateway
 {
-    public function create(GatewayPaymentInfo $data): GatewayResponse
+    public function create(GatewayPaymentInfo $data, string $gatewayStatus): GatewayResponse
     {
         $country = $data->country;
 
@@ -20,7 +20,7 @@ class PagueFacil implements PaymentGateway
         }
 
         return new GatewayResponse(
-            status: 'pending',
+            status: $gatewayStatus,
             gateway: 'PagueFacil',
         );
     }
