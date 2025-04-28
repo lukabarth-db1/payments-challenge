@@ -45,12 +45,15 @@ class ApplicationContainer
         $container->set(PaymentStatusService::class, fn() => new PaymentStatusService());
         $container->set(ConfirmPaymentService::class, fn() => new ConfirmPaymentService(
             $container->get(PaymentStatusService::class),
+            $container->get(ProviderLogService::class),
         ));
         $container->set(CancelPaymentService::class, fn() => new CancelPaymentService(
             $container->get(PaymentStatusService::class),
+            $container->get(ProviderLogService::class),
         ));
         $container->set(RefundPaymentService::class, fn() => new RefundPaymentService(
             $container->get(PaymentStatusService::class),
+            $container->get(ProviderLogService::class),
         ));
         $container->set(HandleRequestPayment::class, fn() => new HandleRequestPayment(
             $container->get(RequestPaymentService::class)
