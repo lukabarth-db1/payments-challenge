@@ -7,7 +7,7 @@ namespace App\Gateway;
 use App\Gateway\Contracts\Dto\GatewayPaymentInfo;
 use App\Gateway\Contracts\PaymentGateway;
 use Exception;
-use Gateway\Contracts\Dto\GatewayResponse;
+use App\Gateway\Contracts\Dto\GatewayResponse;
 
 class PagueFacil implements PaymentGateway
 {
@@ -20,8 +20,8 @@ class PagueFacil implements PaymentGateway
         }
 
         return new GatewayResponse(
-            'pending',
-            'PagueFacil',
+            status: 'pending',
+            gateway: 'PagueFacil',
         );
     }
 }

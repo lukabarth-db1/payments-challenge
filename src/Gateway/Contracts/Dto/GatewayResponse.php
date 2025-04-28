@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Gateway\Contracts\Dto;
+namespace App\Gateway\Contracts\Dto;
 
 class GatewayResponse
 {

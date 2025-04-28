@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Gateway\Contracts;
 
 use App\Gateway\Contracts\Dto\GatewayPaymentInfo;
-use Gateway\Contracts\Dto\GatewayResponse;
+use App\Gateway\Contracts\Dto\GatewayResponse;
 
 interface PaymentGateway
 {
