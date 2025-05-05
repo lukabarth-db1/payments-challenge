@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service\Payments;
 
+use App\Exceptions\PaymentStatusException;
 use App\Helpers\PaymentStatus;
 use App\Service\Payments\Dto\ProviderStatusInfo;
 use App\Service\Providers\ProviderLogService;
-use DomainException;
 
 class CancelPaymentService
 {
@@ -18,10 +18,10 @@ class CancelPaymentService
 
     public function execute(ProviderStatusInfo $paymentInfo): void
     {
-        $status = $this->paymentStatusService->getStatus($paymentInfo->paymentId);
+        $currentStatus = $this->paymentStatusService->getStatus($paymentInfo->paymentId);
 
-        if ($status !== PaymentStatus::PENDING->value) {
-            throw new DomainException("payment id {$paymentInfo->paymentId} cannot be canceled");
+        if ($currentStatus !== PaymentStatus::PENDING->value) {
+            throw new PaymentStatusException($currentStatus);
         }
 
         $this->paymentStatusService->updatePaymentStatus($paymentInfo->paymentId, PaymentStatus::CANCELED->value);

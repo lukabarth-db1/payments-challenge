@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service\Payments;
 
+use App\Gateway\GatewayOperation;
+use App\Helpers\PaymentStatus;
 use App\Service\Payments\CancelPaymentService;
+use App\Service\Payments\Dto\ProviderStatusInfo;
 use App\Service\Payments\PaymentStatusService;
+use App\Service\Providers\ProviderLogService;
 use DomainException;
 use PHPUnit\Framework\TestCase;
 
@@ -13,43 +17,64 @@ class CancelPaymentServiceTest extends TestCase
 {
     public function testCancelAPendingPayment()
     {
-        $paymentId = 1;
+        $paymentInfo = new ProviderStatusInfo(
+            provider: 'PagueFacil',
+            operation: GatewayOperation::CREATE->value,
+            paymentId: 1,
+        );
 
-        /** @var PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
+        /** @var \App\Service\Payments\PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
         $statusService = $this->createMock(PaymentStatusService::class);
 
+        /** @var \App\Service\Providers\ProviderLogService&\PHPUnit\Framework\MockObject\MockObject $logService */
+        $logService = $this->createMock(ProviderLogService::class);
+
         $statusService->method('getStatus')
-            ->with($paymentId)
-            ->willReturn('pending');
+            ->with($paymentInfo->paymentId)
+            ->willReturn(PaymentStatus::PENDING->value);
 
         $statusService->expects($this->once())
             ->method('updatePaymentStatus')
-            ->with($paymentId, 'canceled');
+            ->with($paymentInfo->paymentId, PaymentStatus::CANCELED->value);
 
-        $service = new CancelPaymentService($statusService);
+        $logService->expects($this->once())
+            ->method('log')
+            ->with(
+                $paymentInfo->provider,
+                $paymentInfo->operation,
+                $paymentInfo->paymentId,
+            );
 
-        $service->execute($paymentId);
+        $service = new CancelPaymentService($statusService, $logService);
+        $service->execute($paymentInfo);
     }
 
     public function testThrowsExceptionIfPaymentIsNotPending()
     {
-        $paymentId = 2;
+        $paymentInfo = new ProviderStatusInfo(
+            provider: 'PagueFacil',
+            operation: GatewayOperation::CREATE->value,
+            paymentId: 2,
+        );
 
-        /** @var PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
+        /** @var \App\Service\Payments\PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
         $statusService = $this->createMock(PaymentStatusService::class);
 
+        /** @var \App\Service\Providers\ProviderLogService&\PHPUnit\Framework\MockObject\MockObject $logService */
+        $logService = $this->createMock(ProviderLogService::class);
+
         $statusService->method('getStatus')
-            ->with($paymentId)
-            ->willReturn('confirmed');
+            ->with($paymentInfo->paymentId)
+            ->willReturn(PaymentStatus::CANCELED->value);
 
         $statusService->expects($this->never())
             ->method('updatePaymentStatus');
 
-        $service = new CancelPaymentService($statusService);
+        $service = new CancelPaymentService($statusService, $logService);
 
         $this->expectException(DomainException::class);
-        $this->expectExceptionMessage("payment id {$paymentId} cannot be cancel");
+        $this->expectExceptionMessage("Invalid payment status: " . PaymentStatus::CANCELED->value);
 
-        $service->execute($paymentId);
+        $service->execute($paymentInfo);
     }
 }

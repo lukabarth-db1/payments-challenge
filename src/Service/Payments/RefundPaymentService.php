@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service\Payments;
 
+use App\Exceptions\PaymentStatusException;
 use App\Helpers\PaymentStatus;
 use App\Service\Payments\Dto\ProviderStatusInfo;
 use App\Service\Providers\ProviderLogService;
-use DomainException;
 
 class RefundPaymentService
 {
@@ -21,7 +21,7 @@ class RefundPaymentService
         $currentStatus = $this->paymentStatusService->getStatus($paymentInfo->paymentId);
 
         if ($currentStatus !== PaymentStatus::CONFIRMED->value) {
-            throw new DomainException("payment id {$paymentInfo->paymentId} cannot be refunded");
+            throw new PaymentStatusException($currentStatus);
         }
 
         $this->paymentStatusService->updatePaymentStatus($paymentInfo->paymentId, PaymentStatus::REFUND->value);
