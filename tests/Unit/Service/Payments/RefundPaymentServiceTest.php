@@ -2,8 +2,12 @@
 
 namespace App\Tests\Unit\Service\Payments;
 
+use App\Gateway\GatewayOperation;
+use App\Helpers\PaymentStatus;
+use App\Service\Payments\Dto\ProviderStatusInfo;
 use App\Service\Payments\PaymentStatusService;
 use App\Service\Payments\RefundPaymentService;
+use App\Service\Providers\ProviderLogService;
 use DomainException;
 use PHPUnit\Framework\TestCase;
 
@@ -11,43 +15,64 @@ class RefundPaymentServiceTest extends TestCase
 {
     public function testExecute_testRefundAConfirmedPayment()
     {
-        $paymentId = 1;
+        $paymentInfo = new ProviderStatusInfo(
+            provider: 'PagueFacil',
+            operation: GatewayOperation::CREATE->value,
+            paymentId: 1,
+        );
 
-        /** @var PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
+        /** @var \App\Service\Payments\PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
         $statusService = $this->createMock(PaymentStatusService::class);
 
+        /** @var \App\Service\Providers\ProviderLogService&\PHPUnit\Framework\MockObject\MockObject $logService */
+        $logService = $this->createMock(ProviderLogService::class);
+
         $statusService->method('getStatus')
-            ->with($paymentId)
-            ->willReturn('confirmed');
+            ->with($paymentInfo->paymentId)
+            ->willReturn(PaymentStatus::CONFIRMED->value);
 
         $statusService->expects($this->once())
             ->method('updatePaymentStatus')
-            ->with($paymentId, 'refund');
+            ->with($paymentInfo->paymentId, PaymentStatus::REFUND->value);
 
-        $service = new RefundPaymentService($statusService);
+        $logService->expects($this->once())
+            ->method('log')
+            ->with(
+                $paymentInfo->provider,
+                $paymentInfo->operation,
+                $paymentInfo->paymentId,
+            );
 
-        $service->execute($paymentId);
+        $service = new RefundPaymentService($statusService, $logService);
+        $service->execute($paymentInfo);
     }
 
     public function testExecute_throwsExceptionIfPaymentIsNotConfirmed()
     {
-        $paymentId = 2;
+        $paymentInfo = new ProviderStatusInfo(
+            provider: 'PagueFacil',
+            operation: GatewayOperation::CREATE->value,
+            paymentId: 2,
+        );
 
-        /** @var PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
+        /** @var \App\Service\Payments\PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
         $statusService = $this->createMock(PaymentStatusService::class);
 
+        /** @var \App\Service\Providers\ProviderLogService&\PHPUnit\Framework\MockObject\MockObject $logService */
+        $logService = $this->createMock(ProviderLogService::class);
+
         $statusService->method('getStatus')
-            ->with($paymentId)
-            ->willReturn('refund');
+            ->with($paymentInfo->paymentId)
+            ->willReturn(PaymentStatus::REFUND->value);
 
         $statusService->expects($this->never())
             ->method('updatePaymentStatus');
 
-        $service = new RefundPaymentService($statusService);
+        $service = new RefundPaymentService($statusService, $logService);
 
         $this->expectException(DomainException::class);
-        $this->expectExceptionMessage('payment id 2 cannot be refunded');
+        $this->expectExceptionMessage("Invalid payment status: " . PaymentStatus::REFUND->value);
 
-        $service->execute($paymentId);
+        $service->execute($paymentInfo);
     }
 }
