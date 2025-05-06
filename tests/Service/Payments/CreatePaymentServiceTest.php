@@ -4,6 +4,7 @@ namespace App\Tests\Service;
 
 use App\Database\Connection\SQLiteAdapter;
 use App\Service\Payments\CreatePaymentService;
+use App\Service\Payments\Dto\CreatePaymentInfo;
 use PHPUnit\Framework\TestCase;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Infrastructure\Database\DatabaseConnection;
@@ -23,31 +24,25 @@ class CreatePaymentServiceTest extends TestCase
     public function testExecute_ShouldPersistPaymentInDatabase(): void
     {
         // arrange - prepare test
-        $requestBody = [
-            'payment' => [
-                'type' => 'PHPUnitConfirm',
-                'country' => 'BR',
-                'amount' => 1552.48
-            ],
-            'customer' => [
-                'name' => 'PHP Confirm',
-                'email' => 'phpunitconfirm@email.com',
-                'document' => '45687125963'
-            ]
-        ];
+        $paymentInfo = new CreatePaymentInfo(
+            amount: 2.550,
+            type: 'creditcard',
+            country: 'br',
+            customerId: 1,
+        );
 
-        $createPaymentService = new CreatePaymentService($requestBody);
+        $createPaymentService = new CreatePaymentService($paymentInfo);
 
         // act - run test
-        $createPaymentService->execute();
+        $createPaymentService->execute($paymentInfo);
 
         // assert - check assert
         $lastInsertedPayment = $this->retrieveLastInsertedPayment();
 
         $this->assertEquals('pending', $lastInsertedPayment['status']);
-        $this->assertEquals($lastInsertedPayment['amount'], $requestBody['payment']['amount']);
-        $this->assertEquals($lastInsertedPayment['type'], $requestBody['payment']['type']);
-        $this->assertEquals($lastInsertedPayment['country'], $requestBody['payment']['country']);
+        $this->assertEquals($lastInsertedPayment['amount'], $paymentInfo->amount);
+        $this->assertEquals($lastInsertedPayment['type'], $paymentInfo->type);
+        $this->assertEquals($lastInsertedPayment['country'], $paymentInfo->country);
     }
 
     private function retrieveLastInsertedPayment(): array

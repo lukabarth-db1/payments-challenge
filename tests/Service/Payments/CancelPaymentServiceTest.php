@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace App\Service\Payments;
 
 use App\Database\Connection\SQLiteAdapter;
+use App\Gateway\GatewayOperation;
+use App\Helpers\PaymentStatus;
+use App\Service\Payments\Dto\CreatePaymentInfo;
+use App\Service\Payments\Dto\ProviderStatusInfo;
+use App\Service\Providers\ProviderLogService;
 use PHPUnit\Framework\TestCase;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Infrastructure\Database\DatabaseConnection;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
 
-class CancelPaymentServiceTest extends TestCase
+class CancelPaymentServiceTest  extends TestCase
 {
     /**
      * @before
@@ -23,33 +28,46 @@ class CancelPaymentServiceTest extends TestCase
 
     public function testExecute_ShouldCancelPaymentInDatabase(): void
     {
-        // arrange - prepare test
-        $requestBody = [
-            'payment' => [
-                'type' => 'PHPUnitCancel',
-                'country' => 'BR',
-                'amount' => 2550.98
-            ],
-            'customer' => [
-                'name' => 'PHP Cancel',
-                'email' => 'phpunitcancel@email.com',
-                'document' => '45889645896'
-            ]
-        ];
+        // arrange
+        $createPayment = new CreatePaymentInfo(
+            amount: 12.559,
+            type: 'creditcard',
+            country: 'br',
+            customerId: 1,
+        );
 
-        $createPaymentService = new CreatePaymentService($requestBody);
-        $payment = $createPaymentService->execute();
-        $paymentId = $payment['id'];
-
-        // act - run test
+        $createPaymentService = new CreatePaymentService();
         $paymentStatusService = new PaymentStatusService();
-        $cancelPaymentService = new CancelPaymentService($paymentStatusService);
-        $cancelPaymentService->execute($paymentId);
 
-        // assert - check assert
+        // act - criação do pagamento
+        $createPaymentService->execute($createPayment);
+
         $lastInsertedPayment = $this->retrieveLastInsertedPayment();
+        $paymentId = $lastInsertedPayment['id'];
 
-        $this->assertEquals('canceled', $lastInsertedPayment['status']);
+        $providerStatus = new ProviderStatusInfo(
+            provider: 'PagueFacil',
+            operation: GatewayOperation::CREATE->value,
+            paymentId: $paymentId,
+        );
+
+        $providerLog = new ProviderLogService();
+        $providerLog->log(
+            provider: $providerStatus->provider,
+            operation: $providerStatus->operation,
+            paymentId: $providerStatus->paymentId,
+        );
+
+        $cancelPaymentService = new CancelPaymentService($paymentStatusService, $providerLog);
+        $cancelPaymentService->execute($providerStatus);
+
+        // assert - validações
+        $cancelPayment = $this->retrieveLastInsertedPayment();
+
+        $this->assertEquals(PaymentStatus::CANCELED->value, $cancelPayment['status']);
+        $this->assertEquals($createPayment->amount, $cancelPayment['amount']);
+        $this->assertEquals($createPayment->type, $cancelPayment['type']);
+        $this->assertEquals($createPayment->country, $cancelPayment['country']);
     }
 
     private function retrieveLastInsertedPayment(): array
