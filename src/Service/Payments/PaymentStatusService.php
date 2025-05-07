@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Payments;
 
+use App\Exceptions\PaymentStatusException;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Facades\DatabaseOperation;
 use Phractico\Core\Infrastructure\Database\Query\Grammar\Comparison;
@@ -17,6 +18,10 @@ class PaymentStatusService
         $statement->returningResults();
 
         $result = Database::execute($statement)->getRows()[0]['status'];
+
+        if ($result === null) {
+            throw new PaymentStatusException('Invalid ID');
+        }
 
         return $result;
     }
