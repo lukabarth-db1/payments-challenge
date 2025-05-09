@@ -28,6 +28,9 @@ class SQLiteAdapter implements Connection
     {
         $stmt = $statement->toArray();
         $sqliteStatement = $this->connection->prepare($stmt['sql']);
+        if (!$sqliteStatement) {
+            throw new \RuntimeException("Failed to prepare statement: " . $this->connection->lastErrorMsg(), $this->connection->lastErrorCode());
+        }
         foreach ($stmt['params'] as $key => $value) {
             $sqliteStatement->bindValue($key, $value);
         }
