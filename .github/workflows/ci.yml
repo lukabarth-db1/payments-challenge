@@ -25,6 +25,6 @@ jobs:
         run: composer install && composer dump-autoload
 
       - name: init db
-        run: php ./db-scripts/create_tables.php
+        run: php ./db-scripts/create-tables.php
       - name: Run tests
         run: vendor/bin/phpunit
