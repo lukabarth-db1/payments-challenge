@@ -24,5 +24,7 @@ jobs:
       - name: Install dependencies
         run: composer install && composer dump-autoload
 
+      - name: init db
+        run: php ./db-scripts/create_tables.php
       - name: Run tests
         run: vendor/bin/phpunit
