@@ -12,7 +12,7 @@ use App\Service\Providers\ProviderLogService;
 use PHPUnit\Framework\TestCase;
 use Phractico\Core\Infrastructure\Database\DatabaseConnection;
 
-class TryChangeStatusInexistentPayment extends TestCase
+class TryChangeStatusInexistentPaymentTest extends TestCase
 {
     /**
      * @before
