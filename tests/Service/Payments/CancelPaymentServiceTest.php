@@ -15,7 +15,7 @@ use Phractico\Core\Facades\Database;
 use Phractico\Core\Infrastructure\Database\DatabaseConnection;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
 
-class CancelPaymentServiceTest  extends TestCase
+class CancelPaymentServiceTest extends TestCase
 {
     /**
      * @before

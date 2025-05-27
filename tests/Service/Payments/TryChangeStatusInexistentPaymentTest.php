@@ -25,9 +25,6 @@ class TryChangeStatusInexistentPayment extends TestCase
 
     public function testExecute_ShouldThrowExceptionWhenPaymentDoesNotExist(): void
     {
-        $this->expectException(PaymentStatusException::class);
-        $this->expectExceptionMessage("Invalid ID");
-
         $paymentStatusService = new PaymentStatusService();
 
         $providerStatus = new ProviderStatusInfo(
@@ -38,6 +35,9 @@ class TryChangeStatusInexistentPayment extends TestCase
 
         $providerLog = new ProviderLogService();
         $confirmPaymentService = new ConfirmPaymentService($paymentStatusService, $providerLog);
+
+        $this->expectException(PaymentStatusException::class);
+        $this->expectExceptionMessage("Invalid ID");
 
         $confirmPaymentService->execute($providerStatus);
     }
