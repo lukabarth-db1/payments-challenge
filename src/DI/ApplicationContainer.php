@@ -8,8 +8,9 @@ use App\API\Http\Controller\PaymentsController;
 use App\API\Http\Provider\ApplicationControllerProvider;
 use App\API\Http\Request\SymfonyHttpRequestInterceptor;
 use App\Database\ApplicationDatabaseProvider;
+use App\Gateway\Contracts\GatewayFactory;
 use App\Gateway\Contracts\PaymentGateway;
-use App\Gateway\Contracts\PaymentGatewayInterface;
+use App\Gateway\PagueDificil;
 use App\Gateway\PagueFacil;
 use App\Service\Customers\CreateCustomerService;
 use App\Service\Payments\CancelPaymentService;
@@ -35,6 +36,13 @@ class ApplicationContainer
     public static function resolve(): ContainerInterface
     {
         $container = Container::create();
+        $container->set(PagueFacil::class, fn() => new PagueFacil());
+        $container->set(PagueDificil::class, fn() => new PagueDificil());
+
+        $container->set(GatewayFactory::class, fn() => new GatewayFactory(
+            $container->get(PagueFacil::class),
+            $container->get(PagueDificil::class),
+        ));
         $container->set(HttpRequestInterceptor::class, fn() => new SymfonyHttpRequestInterceptor());
         $container->set(ControllerProvider::class, fn() => new ApplicationControllerProvider());
         $container->set(DatabaseProvider::class, fn() => new ApplicationDatabaseProvider());
@@ -71,7 +79,7 @@ class ApplicationContainer
             $container->get(RefundPaymentService::class)
         ));
         $container->set(RequestPaymentService::class, fn() => new RequestPaymentService(
-            $container->get(PaymentGateway::class),
+            $container->get(GatewayFactory::class),
             $container->get(ProviderLogService::class),
             $container->get(CreateCustomerService::class),
             $container->get(CreatePaymentService::class),
