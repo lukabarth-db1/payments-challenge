@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use Phractico\Core\Facades\Database;
 use Phractico\Core\Infrastructure\Database\DatabaseConnection;
 use Phractico\Core\Infrastructure\Database\Query\Statement;
+use App\Gateway\PagueFacil;
 
 class CancelPaymentServiceTest extends TestCase
 {
@@ -38,6 +39,7 @@ class CancelPaymentServiceTest extends TestCase
 
         $createPaymentService = new CreatePaymentService();
         $paymentStatusService = new PaymentStatusService();
+        $gateway = new PagueFacil();
 
         // act - criação do pagamento
         $createPaymentService->execute($createPayment);
@@ -58,7 +60,7 @@ class CancelPaymentServiceTest extends TestCase
             paymentId: $providerStatus->paymentId,
         );
 
-        $cancelPaymentService = new CancelPaymentService($paymentStatusService, $providerLog);
+        $cancelPaymentService = new CancelPaymentService($gateway, $paymentStatusService, $providerLog);
         $cancelPaymentService->execute($providerStatus);
 
         // assert - validações

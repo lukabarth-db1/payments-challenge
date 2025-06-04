@@ -5,6 +5,7 @@ namespace Service\Payments;
 use App\Database\Connection\SQLiteAdapter;
 use App\Exceptions\PaymentStatusException;
 use App\Gateway\GatewayOperation;
+use App\Gateway\PagueFacil;
 use App\Service\Payments\ConfirmPaymentService;
 use App\Service\Payments\Dto\ProviderStatusInfo;
 use App\Service\Payments\PaymentStatusService;
@@ -26,6 +27,7 @@ class TryChangeStatusInexistentPaymentTest extends TestCase
     public function testExecute_ShouldThrowExceptionWhenPaymentDoesNotExist(): void
     {
         $paymentStatusService = new PaymentStatusService();
+        $gateway = new PagueFacil();
 
         $providerStatus = new ProviderStatusInfo(
             provider: 'PagueFacil',
@@ -34,7 +36,7 @@ class TryChangeStatusInexistentPaymentTest extends TestCase
         );
 
         $providerLog = new ProviderLogService();
-        $confirmPaymentService = new ConfirmPaymentService($paymentStatusService, $providerLog);
+        $confirmPaymentService = new ConfirmPaymentService($gateway, $paymentStatusService, $providerLog);
 
         $this->expectException(PaymentStatusException::class);
         $this->expectExceptionMessage("Invalid ID");

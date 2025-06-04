@@ -2,6 +2,8 @@
 
 namespace App\Tests\Unit\Service\Payments;
 
+use App\Exceptions\PaymentStatusException;
+use App\Gateway\Contracts\PaymentGateway;
 use App\Gateway\GatewayOperation;
 use App\Helpers\PaymentStatus;
 use App\Service\Payments\ConfirmPaymentService;
@@ -21,11 +23,18 @@ class ConfirmPaymentServiceTest extends TestCase
             paymentId: 1,
         );
 
+        /** @var \App\Gateway\Contracts\PaymentGateway&\PHPUnit\Framework\MockObject\MockObject $gateway */
+        $gateway = $this->createMock(PaymentGateway::class);
+
         /** @var \App\Service\Payments\PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
         $statusService = $this->createMock(PaymentStatusService::class);
 
         /** @var \App\Service\Providers\ProviderLogService&\PHPUnit\Framework\MockObject\MockObject $logService */
         $logService = $this->createMock(ProviderLogService::class);
+
+        $gateway->expects($this->once())
+            ->method('confirm')
+            ->with(PaymentStatus::PENDING->value);
 
         $statusService->method('getStatus')
             ->with($paymentInfo->paymentId)
@@ -43,7 +52,7 @@ class ConfirmPaymentServiceTest extends TestCase
                 $paymentInfo->paymentId,
             );
 
-        $service = new ConfirmPaymentService($statusService, $logService);
+        $service = new ConfirmPaymentService($gateway, $statusService, $logService);
         $service->execute($paymentInfo);
     }
 
@@ -55,11 +64,19 @@ class ConfirmPaymentServiceTest extends TestCase
             paymentId: 2,
         );
 
+        /** @var \App\Gateway\Contracts\PaymentGateway&\PHPUnit\Framework\MockObject\MockObject $gateway */
+        $gateway = $this->createMock(PaymentGateway::class);
+
         /** @var \App\Service\Payments\PaymentStatusService&\PHPUnit\Framework\MockObject\MockObject $statusService */
         $statusService = $this->createMock(PaymentStatusService::class);
 
         /** @var \App\Service\Providers\ProviderLogService&\PHPUnit\Framework\MockObject\MockObject $logService */
         $logService = $this->createMock(ProviderLogService::class);
+
+        $gateway->expects($this->once())
+            ->method('confirm')
+            ->with(PaymentStatus::CONFIRMED->value)
+            ->willThrowException(new PaymentStatusException(PaymentStatus::CONFIRMED->value));
 
         $statusService->method('getStatus')
             ->with($paymentInfo->paymentId)
@@ -68,7 +85,7 @@ class ConfirmPaymentServiceTest extends TestCase
         $statusService->expects($this->never())
             ->method('updatePaymentStatus');
 
-        $service = new ConfirmPaymentService($statusService, $logService);
+        $service = new ConfirmPaymentService($gateway, $statusService, $logService);
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage("Invalid payment status: " . PaymentStatus::CONFIRMED->value);

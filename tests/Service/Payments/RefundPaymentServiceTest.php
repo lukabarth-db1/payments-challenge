@@ -6,6 +6,7 @@ namespace App\Service\Payments;
 
 use App\Database\Connection\SQLiteAdapter;
 use App\Gateway\GatewayOperation;
+use App\Gateway\PagueFacil;
 use App\Helpers\PaymentStatus;
 use App\Service\Payments\Dto\CreatePaymentInfo;
 use App\Service\Payments\Dto\ProviderStatusInfo;
@@ -38,6 +39,7 @@ class RefundPaymentServiceTest extends TestCase
 
         $createPaymentService = new CreatePaymentService();
         $paymentStatusService = new PaymentStatusService();
+        $gateway = new PagueFacil();
 
         // act - criação do pagamento
         $createPaymentService->execute($createPayment);
@@ -58,10 +60,10 @@ class RefundPaymentServiceTest extends TestCase
             paymentId: $providerStatus->paymentId,
         );
 
-        $confirmPaymentService = new ConfirmPaymentService($paymentStatusService, $providerLog);
+        $confirmPaymentService = new ConfirmPaymentService($gateway, $paymentStatusService, $providerLog);
         $confirmPaymentService->execute($providerStatus);
 
-        $refundPaymentService = new RefundPaymentService($paymentStatusService, $providerLog);
+        $refundPaymentService = new RefundPaymentService($gateway, $paymentStatusService, $providerLog);
         $refundPaymentService->execute($providerStatus);
 
         // assert - validações
