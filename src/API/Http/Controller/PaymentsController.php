@@ -42,26 +42,32 @@ class PaymentsController implements Controller
 
     public function createPayment(): Response
     {
-        $request = RequestHandler::getIncomingRequest();
-        $this->requestBody = $this->decodeRequestBody($request);
+        try {
+            $request = RequestHandler::getIncomingRequest();
+            $this->requestBody = $this->decodeRequestBody($request);
 
-        $dto = new RequestPaymentData(
-            paymentAmount: $this->requestBody['payment']['amount'],
-            paymentType: $this->requestBody['payment']['type'],
-            paymentCountry: $this->requestBody['payment']['country'],
-            customer: new CreateCustomerInfo(
-                $this->requestBody['customer']['name'],
-                $this->requestBody['customer']['email'],
-                $this->requestBody['customer']['document'],
-            ),
-        );
+            $dto = new RequestPaymentData(
+                paymentAmount: $this->requestBody['payment']['amount'],
+                paymentType: $this->requestBody['payment']['type'],
+                paymentCountry: $this->requestBody['payment']['country'],
+                customer: new CreateCustomerInfo(
+                    $this->requestBody['customer']['name'],
+                    $this->requestBody['customer']['email'],
+                    $this->requestBody['customer']['document'],
+                ),
+            );
 
-        $payment = ($this->handleRequestPayment)($dto);
+            $payment = ($this->handleRequestPayment)($dto);
 
-        return new JsonResponse(201, [
-            'payment' => $payment,
-            'provider_logs' => "Payment successfuly created",
-        ]);
+            return new JsonResponse(201, [
+                'payment' => $payment,
+                'provider_logs' => "Payment successfuly created",
+            ]);
+        } catch (DomainException $e) {
+            return new JsonResponse(400, [
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     public function confirmPayment(): Response
