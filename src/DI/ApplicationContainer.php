@@ -18,6 +18,8 @@ use App\Service\Payments\ConfirmPaymentService;
 use App\Service\Payments\CreatePaymentService;
 use App\Service\Payments\PaymentStatusService;
 use App\Service\Payments\RefundPaymentService;
+use App\Service\Payments\Repository\PaymentRepository;
+use App\Service\Payments\Repository\ProviderRepository;
 use App\Service\Payments\RequestPaymentService;
 use App\Service\Payments\RequestPaymentService\CancelPaymentHandler;
 use App\Service\Payments\RequestPaymentService\ConfirmPaymentHandler;
@@ -43,6 +45,7 @@ class ApplicationContainer
             $container->get(PagueFacil::class),
             $container->get(PagueDificil::class),
         ));
+        $container->set(ProviderRepository::class, fn() => new ProviderRepository());
         $container->set(HttpRequestInterceptor::class, fn() => new SymfonyHttpRequestInterceptor());
         $container->set(ControllerProvider::class, fn() => new ApplicationControllerProvider());
         $container->set(DatabaseProvider::class, fn() => new ApplicationDatabaseProvider());
@@ -70,13 +73,16 @@ class ApplicationContainer
             $container->get(RequestPaymentService::class)
         ));
         $container->set(ConfirmPaymentHandler::class, fn() => new ConfirmPaymentHandler(
-            $container->get(ConfirmPaymentService::class)
+            $container->get(ConfirmPaymentService::class),
+            $container->get(ProviderRepository::class),
         ));
         $container->set(CancelPaymentHandler::class, fn() => new CancelPaymentHandler(
-            $container->get(CancelPaymentService::class)
+            $container->get(CancelPaymentService::class),
+            $container->get(ProviderRepository::class),
         ));
         $container->set(RefundPaymentHandler::class, fn() => new RefundPaymentHandler(
-            $container->get(RefundPaymentService::class)
+            $container->get(RefundPaymentService::class),
+            $container->get(ProviderRepository::class),
         ));
         $container->set(RequestPaymentService::class, fn() => new RequestPaymentService(
             $container->get(GatewayFactory::class),
