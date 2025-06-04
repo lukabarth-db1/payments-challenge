@@ -6,7 +6,7 @@ namespace App\Service\Payments;
 
 use App\Domain\Payment;
 use App\Gateway\Contracts\Dto\GatewayPaymentInfo;
-use App\Gateway\Contracts\PaymentGateway;
+use App\Gateway\Contracts\GatewayFactory;
 use App\Service\Customers\CreateCustomerService;
 use App\Service\Dto\RequestPaymentData;
 use App\Service\Payments\Dto\CreatePaymentInfo;
@@ -15,7 +15,7 @@ use App\Service\Providers\ProviderLogService;
 class RequestPaymentService
 {
     public function __construct(
-        private readonly PaymentGateway $gateway,
+        private readonly GatewayFactory $gatewayFactory,
         private readonly ProviderLogService $logService,
         private readonly CreateCustomerService $createCustomerService,
         private readonly CreatePaymentService $createPaymentService,
@@ -23,7 +23,9 @@ class RequestPaymentService
 
     public function handle(RequestPaymentData $data, string $gatewayStatus): Payment
     {
-        $gatewayResponse = $this->gateway->create(
+        $gateway = $this->gatewayFactory->gatewayHandler($data->paymentCountry);
+
+        $gatewayResponse = $gateway->create(
             new GatewayPaymentInfo(
                 amount: $data->paymentAmount,
                 type: $data->paymentType,
