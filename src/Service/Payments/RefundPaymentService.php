@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Service\Payments;
 
-use App\Exceptions\PaymentStatusException;
 use App\Gateway\Contracts\PaymentGateway;
 use App\Helpers\PaymentStatus;
 use App\Service\Payments\Dto\ProviderStatusInfo;
