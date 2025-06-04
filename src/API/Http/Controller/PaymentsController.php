@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\API\Http\Controller;
 
+use App\Exceptions\GatewayException;
 use App\Service\Customers\Dto\CreateCustomerInfo;
 use App\Service\Dto\RequestPaymentData;
 use App\Service\Payments\RequestPaymentService\HandleRequestPayment;
@@ -64,6 +65,10 @@ class PaymentsController implements Controller
                 'provider_logs' => "Payment successfuly created",
             ]);
         } catch (DomainException $e) {
+            return new JsonResponse(400, [
+                'error' => $e->getMessage()
+            ]);
+        } catch (GatewayException $e) {
             return new JsonResponse(400, [
                 'error' => $e->getMessage()
             ]);
