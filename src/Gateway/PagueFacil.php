@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Gateway;
 
+use App\Exceptions\GatewayException;
 use App\Exceptions\PaymentStatusException;
 use App\Gateway\Contracts\Dto\GatewayPaymentInfo;
 use App\Gateway\Contracts\PaymentGateway;
-use Exception;
 use App\Gateway\Contracts\Dto\GatewayResponse;
 use App\Helpers\PaymentStatus;
 
@@ -18,7 +18,7 @@ class PagueFacil implements PaymentGateway
         $country = $data->country;
 
         if ($country !== 'BR') {
-            throw new Exception("PagueFacil only accepts payments from Brazil");
+            throw new GatewayException("PagueFacil only accepts payments from Brazil");
         }
 
         return new GatewayResponse(
