@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Payments;
 
-use App\Exceptions\PaymentStatusException;
+use App\Gateway\Contracts\PaymentGateway;
 use App\Helpers\PaymentStatus;
 use App\Service\Payments\Dto\ProviderStatusInfo;
 use App\Service\Providers\ProviderLogService;
@@ -12,6 +12,7 @@ use App\Service\Providers\ProviderLogService;
 class ConfirmPaymentService
 {
     public function __construct(
+        private PaymentGateway $gateway,
         private PaymentStatusService $paymentStatusService,
         private readonly ProviderLogService $logService,
     ) {}
@@ -20,9 +21,7 @@ class ConfirmPaymentService
     {
         $currentStatus = $this->paymentStatusService->getStatus($paymentInfo->paymentId);
 
-        if ($currentStatus !== PaymentStatus::PENDING->value) {
-            throw new PaymentStatusException($currentStatus);
-        }
+        $this->gateway->confirm($currentStatus);
 
         $this->paymentStatusService->updatePaymentStatus($paymentInfo->paymentId, PaymentStatus::CONFIRMED->value);
 

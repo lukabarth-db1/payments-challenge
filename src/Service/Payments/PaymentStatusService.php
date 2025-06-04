@@ -34,5 +34,7 @@ class PaymentStatusService
             ->where('id', Comparison::EQUAL, $paymentId)
             ->build();
         Database::execute($statement);
+
+        // $var = "update payments set status = :status where id = :paymentId";
     }
 }

@@ -10,7 +10,7 @@ use App\Gateway\Contracts\Dto\GatewayResponse;
 interface PaymentGateway
 {
     public function create(GatewayPaymentInfo $data, string $gatewayStatus): GatewayResponse;
-    // public function confirm(int $paymentId): void;
-    // public function cancel(int $paymentId): void;
-    // public function refund(int $paymentId): void;
+    public function confirm(string $status): void;
+    public function cancel(string $status): void;
+    public function refund(string $status): void;
 }
